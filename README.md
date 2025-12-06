@@ -327,13 +327,26 @@ python bulk_import_to_open_notebook.py \
 **A:** 
 1. Open your notebook in Open Notebook
 2. Look at the URL in your browser
-3. Copy the `notebook:xxxxxxxxxx` part
+3. Find the part after `/notebooks/`
+4. **Important:** If you see `%3A` in the URL, replace it with `:` (colon)
 
-Example: 
+**Example 1 - Simple URL:**
 ```
 URL: http://localhost:5055/notebooks/notebook:abc123xyz
 ID:  notebook:abc123xyz
 ```
+
+**Example 2 - URL-encoded (most common):**
+```
+URL: http://127.0.0.1:8502/notebooks/notebook%3A075hgk2qbdgoka54yug5
+                                            ↑ This %3A is a colon (:)
+ID:  notebook:075hgk2qbdgoka54yug5
+     ↑ Use the decoded version with a real colon
+```
+
+**Quick Rule:** `%3A` in URLs = `:` (colon) in notebook IDs
+
+📖 **For detailed instructions with more examples, see [NOTEBOOK_ID_GUIDE.md](NOTEBOOK_ID_GUIDE.md)**
 
 ### Q: Can I import files with different extensions?
 
@@ -353,6 +366,64 @@ Other patterns are blocked for security.
 ### Q: Does this create duplicates?
 
 **A:** Yes. The script imports all files it finds, even if they were previously imported. Make sure to avoid running it multiple times on the same directory unless you want duplicates.
+
+---
+
+## 🔧 Troubleshooting
+
+### Common Issues
+
+#### "Security Error: API URL must be localhost"
+
+**Problem:** Trying to connect to a non-localhost API.
+
+**Solution:** The script only allows localhost connections for security. If your Open Notebook is on a remote server, use SSH tunneling:
+```bash
+ssh -L 5055:localhost:5055 user@remote-server
+```
+
+#### "Notebook not found" or "Error checking notebook"
+
+**Problem:** Invalid notebook ID or Open Notebook not running.
+
+**Solutions:**
+1. Make sure Open Notebook is running at the API URL (default: http://localhost:5055)
+2. Verify your notebook ID is correct (see FAQ above)
+3. Check if you need to decode `%3A` to `:` in the notebook ID
+4. Verify the notebook exists by opening it in your browser first
+
+#### "Source directory does not exist"
+
+**Problem:** The path you provided doesn't exist.
+
+**Solutions:**
+1. Use absolute paths: `/Users/username/documents` instead of `~/documents`
+2. Check for typos in the path
+3. Ensure the directory exists: `ls -la /path/to/directory`
+
+#### "File too large" or "Total size limit exceeded"
+
+**Problem:** Files exceed security limits (10MB per file, 500MB total).
+
+**Solutions:**
+1. Split large files into smaller chunks
+2. Import in batches (multiple runs with different source directories)
+3. Remove oversized files from the source directory
+
+#### Script hangs or is very slow
+
+**Problem:** Many files or slow embedding process.
+
+**Solutions:**
+1. Use `--no-embed` flag to skip embedding (much faster)
+2. Increase `--delay` if API is being overwhelmed
+3. Process files in smaller batches
+
+#### "Invalid file pattern"
+
+**Problem:** Using a pattern other than `*.md`, `*.markdown`, or `*.txt`.
+
+**Solution:** The script only accepts markdown and text files for security. Convert other formats to markdown first.
 
 ---
 
