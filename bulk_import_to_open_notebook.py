@@ -35,6 +35,9 @@ from typing import Any, Dict, List, Optional
 
 import requests
 
+# Configuration - Edit this to match your Open Notebook server
+DEFAULT_API_URL = "http://localhost:5055"  # Change this for remote/hosted instances
+
 # ANSI color codes
 BLUE = "\033[94m"
 RED = "\033[91m"
@@ -306,6 +309,7 @@ class OpenNotebookImporter:
         transformations: Optional[List[str]] = None,
         delay: float = 1.0,
         pattern: str = "*.md",
+        recursive: bool = False,
     ) -> Dict[str, Any]:
         """
         Import all markdown files from a directory.
@@ -316,6 +320,7 @@ class OpenNotebookImporter:
             transformations: List of transformation IDs to apply
             delay: Delay between imports in seconds
             pattern: File pattern to match (default: *.md)
+            recursive: Search subdirectories recursively
 
         Returns:
             Dict with import statistics
@@ -331,7 +336,10 @@ class OpenNotebookImporter:
 
         # Get markdown files
         try:
-            all_files = list(directory.glob(pattern))
+            if recursive:
+                all_files = list(directory.rglob(pattern))
+            else:
+                all_files = list(directory.glob(pattern))
         except Exception as e:
             print(f"{RED}Error scanning directory: {e}{RESET}")
             return {"total": 0, "success": 0, "failed": 0}
@@ -402,14 +410,21 @@ def main():
     # Optional arguments
     parser.add_argument(
         "--api-url",
-        default="http://localhost:5055",
-        help="Open Notebook API URL (default: http://localhost:5055)",
+        default=DEFAULT_API_URL,
+        help=f"Open Notebook API URL (default: {DEFAULT_API_URL})",
     )
 
     parser.add_argument(
         "--pattern",
         default="*.md",
         help="File pattern to match (default: *.md)",
+    )
+
+    parser.add_argument(
+        "-R",
+        "--recursive",
+        action="store_true",
+        help="Search subdirectories recursively",
     )
 
     parser.add_argument(
@@ -489,6 +504,7 @@ def main():
     print(f"  Notebook ID: {args.notebook_id[:50]}...")  # Truncate for display
     print(f"  Source Directory: {args.source_dir}")  # Use arg, not resolved path
     print(f"  File Pattern: {args.pattern}")
+    print(f"  Recursive Search: {args.recursive}")
     print(f"  Embed Sources: {not args.no_embed}")
     if args.transformations:
         print(f"  Transformations: {', '.join(args.transformations)}")
@@ -503,7 +519,10 @@ def main():
     print()
 
     # Count files
-    markdown_files = list(source_dir.glob(args.pattern))
+    if args.recursive:
+        markdown_files = list(source_dir.rglob(args.pattern))
+    else:
+        markdown_files = list(source_dir.glob(args.pattern))
     print(f"{BLUE}Found {len(markdown_files)} files to import{RESET}")
 
     if not markdown_files:
@@ -534,6 +553,7 @@ def main():
             transformations=args.transformations,
             delay=args.delay,
             pattern=args.pattern,
+            recursive=args.recursive,
         )
     except SecurityError as e:
         print(f"\n{RED}Security Error: {e}{RESET}")
