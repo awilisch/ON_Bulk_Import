@@ -190,10 +190,16 @@ class OpenNotebookImporter:
                 return True
             elif response.status_code == 404:
                 print(f"{RED}✗ Notebook not found: {self.notebook_id}{RESET}")
+                print(
+                    f"{YELLOW}  Tip: If you copied the ID from the Open Notebook URL, replace %3A with : (e.g. notebook%3Aabc123 → notebook:abc123){RESET}"
+                )
                 return False
             else:
                 print(f"{RED}✗ Error checking notebook: {response.status_code}{RESET}")
                 print(f"{RED}  Response: {response.text}{RESET}")
+                print(
+                    f"{YELLOW}  Tip: If you copied the ID from the Open Notebook URL, replace %3A with : (e.g. notebook%3Aabc123 → notebook:abc123){RESET}"
+                )
                 return False
         except Exception as e:
             print(f"{RED}✗ Error connecting to Open Notebook API: {e}{RESET}")
